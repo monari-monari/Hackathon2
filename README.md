@@ -86,7 +86,7 @@ Hackathon/
 ## Getting Started 
 
 1. ** Clone or download** the project files
-2. ** Open** `wendy.html` in a modern web browser
+2. ** Open** `index.html` in a modern web browser
 3. ** Start tracking** your meals and nutrition!
 
 ## Usage Guide 
