@@ -102,29 +102,12 @@ function showSuccessMessage(message) {
 // Load daily progress data
 async function loadDailyProgress() {
     try {
-        const response = await fetch('/progress/daily');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.error) {
-            console.error('Error loading progress:', data.error);
-            return;
-        }
-
-        dailyProgress = {
-            consumed: data.consumed || 0,
-            goal: data.daily_goal || 2000,
-            macros: data.macros || { protein: 0, carbs: 0, fats: 0 }
-        };
-
-        updateProgressDisplay();
-        updateMacroChart();
+        // Use demo data since no backend is available
+        loadDemoData();
     } catch (error) {
         console.error('Error fetching daily progress:', error);
-        // Continue with default data if API fails
+        // Continue with demo data if API fails
+        loadDemoData();
     }
 }
 
@@ -280,29 +263,8 @@ async function generateRecipes() {
             button.innerHTML = '<div class="spinner"></div>Generating...';
         }
         
-        const response = await fetch('/recipes/suggest', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                ingredients: ingredients.split(',').map(i => i.trim()),
-                region: region
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        if (data.error) {
-            showErrorMessage('Error generating recipes: ' + data.error);
-            return;
-        }
-
-        displayRecipes(data.recipes);
+        // Generate demo recipes since no backend is available
+        generateDemoRecipes(ingredients, region);
     } catch (error) {
         console.error('Error generating recipes:', error);
         showErrorMessage('Failed to generate recipes. Please try again.');
@@ -311,6 +273,37 @@ async function generateRecipes() {
         if (button) {
             button.textContent = 'Generate Recipes';
         }
+    }
+}
+
+// Generate demo recipes for demonstration
+function generateDemoRecipes(ingredients, region) {
+    try {
+        const demoRecipes = [
+            {
+                id: 1,
+                name: `${region} Style Stew`,
+                ingredients: ingredients.split(',').map(i => i.trim()).slice(0, 3),
+                nutrition: { calories: 350, protein: 25, carbs: 30, fats: 15 }
+            },
+            {
+                id: 2,
+                name: `Traditional ${region} Rice Bowl`,
+                ingredients: ['rice', 'vegetables', 'spices'],
+                nutrition: { calories: 420, protein: 18, carbs: 65, fats: 12 }
+            },
+            {
+                id: 3,
+                name: `${region} Protein Dish`,
+                ingredients: ['protein source', 'local vegetables'],
+                nutrition: { calories: 380, protein: 35, carbs: 20, fats: 18 }
+            }
+        ];
+        
+        displayRecipes(demoRecipes);
+    } catch (error) {
+        console.error('Error generating demo recipes:', error);
+        showErrorMessage('Failed to generate recipes. Please try again.');
     }
 }
 
@@ -395,6 +388,12 @@ function logRecipeAsMeal(recipeId, name, calories, protein, carbs, fats) {
 // Log a meal
 async function logMeal() {
     try {
+        const button = document.getElementById('log-btn-text');
+        if (button) {
+            button.innerHTML = '<div class="spinner"></div>Logging...';
+        }
+        
+        // Simulate meal logging since no backend is available
         const mealData = {
             meal_name: sanitizeInput(elements.mealName?.value || ''),
             calories: parseInt(elements.mealCalories?.value) || 0,
@@ -406,37 +405,20 @@ async function logMeal() {
 
         // Validate meal data
         validateMealData(mealData);
-
-        const button = document.getElementById('log-btn-text');
-        if (button) {
-            button.innerHTML = '<div class="spinner"></div>Logging...';
-        }
-
-        const response = await fetch('/meals/log', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(mealData)
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
         
-        if (data.error) {
-            showErrorMessage('Error logging meal: ' + data.error);
-            return;
-        }
+        // Update daily progress with new meal
+        dailyProgress.consumed += mealData.calories;
+        dailyProgress.macros.protein += mealData.protein;
+        dailyProgress.macros.carbs += mealData.carbs;
+        dailyProgress.macros.fats += mealData.fats;
 
         // Clear form
         clearMealForm();
 
-        // Reload data
-        loadDailyProgress();
-        loadTodaysMeals();
+        // Update displays
+        updateProgressDisplay();
+        updateMacroChart();
+        addMealToTodaysList(mealData);
         
         showSuccessMessage('Meal logged successfully!');
     } catch (error) {
@@ -447,6 +429,37 @@ async function logMeal() {
         if (button) {
             button.textContent = 'Log Meal';
         }
+    }
+}
+
+// Add meal to today's meals list
+function addMealToTodaysList(mealData) {
+    try {
+        const container = document.getElementById('meals-list');
+        if (!container) return;
+        
+        // If showing "No meals logged" message, clear it
+        if (container.innerHTML.includes('No meals logged today')) {
+            container.innerHTML = '';
+        }
+        
+        const mealItem = document.createElement('div');
+        mealItem.className = 'meal-item';
+        mealItem.innerHTML = `
+            <div class="meal-info">
+                <div class="meal-name">${sanitizeInput(mealData.meal_name)}</div>
+                <div class="meal-details">
+                    ${sanitizeInput(mealData.meal_type)} • 
+                    P: ${Math.round(mealData.protein)}g • 
+                    C: ${Math.round(mealData.carbs)}g • 
+                    F: ${Math.round(mealData.fats)}g
+                </div>
+            </div>
+            <div class="meal-calories">${mealData.calories} kcal</div>
+        `;
+        container.appendChild(mealItem);
+    } catch (error) {
+        console.error('Error adding meal to list:', error);
     }
 }
 
@@ -464,19 +477,8 @@ function clearMealForm() {
 // Load today's meals
 async function loadTodaysMeals() {
     try {
-        const response = await fetch('/meals/today');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.error) {
-            console.error('Error loading meals:', data.error);
-            return;
-        }
-
-        displayTodaysMeals(data.meals);
+        // Use demo data since no backend is available
+        loadDemoData();
     } catch (error) {
         console.error('Error fetching today\'s meals:', error);
         // Continue with demo data if API fails
