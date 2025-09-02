@@ -866,3 +866,8 @@ body {
         text-align: center;
     }
 }
+footer {
+    text-align: center;
+    margin-top: 25px;
+    color: #ffffff;
+}
